@@ -33,6 +33,7 @@ jobs:
       - name: Stamp artifact file name with commit hash
         run: |
           artifactName1=$(ls simple-mule-api/target/*.jar 2>/dev/null | head -1)
+
           if [ -z "$artifactName1" ]; then
             echo "No JAR found inside simple-mule-api/target/"
             exit 1
@@ -40,7 +41,9 @@ jobs:
 
           commitHash=$(git rev-parse --short "$GITHUB_SHA")
           artifactName2=$(echo "$artifactName1" | sed "s/.jar/-$commitHash.jar/g")
+
           mv "$artifactName1" "$artifactName2"
+          echo "Renamed artifact: $artifactName2"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -81,7 +84,9 @@ jobs:
             exit 1
           fi
 
-          mvn deploy -DmuleDeploy \
+          mvn deploy \
+            --file simple-mule-api/pom.xml \
+            -DmuleDeploy \
             -Dmule.artifact="$artifactName" \
             -Danypoint.username="$USERNAME" \
             -Danypoint.password="$PASSWORD"
