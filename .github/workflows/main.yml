@@ -74,8 +74,8 @@ jobs:
 
       - name: Deploy to Sandbox (Connected App)
         env:
-          CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
+          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
         run: |
           artifactName=$(ls target/*.jar 2>/dev/null | head -1)
 
@@ -84,9 +84,14 @@ jobs:
             exit 1
           fi
 
+          if [ -z "$ANYPOINT_CLIENT_ID" ] || [ -z "$ANYPOINT_CLIENT_SECRET" ]; then
+            echo "Missing ANYPOINT_CLIENT_ID or ANYPOINT_CLIENT_SECRET in GitHub Secrets!"
+            exit 1
+          fi
+
           mvn deploy \
             --file simple-mule-api/pom.xml \
             -DmuleDeploy \
             -Dmule.artifact="$artifactName" \
-            -Danypoint.clientId="$CLIENT_ID" \
-            -Danypoint.clientSecret="$CLIENT_SECRET"
+            -Danypoint.client_id="$ANYPOINT_CLIENT_ID" \
+            -Danypoint.client_secret="$ANYPOINT_CLIENT_SECRET"
