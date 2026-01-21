@@ -24,6 +24,9 @@
     <cloudhub.workers>1</cloudhub.workers>
     <cloudhub.workerType>MICRO</cloudhub.workerType>
     <cloudhub.applicationName>simple-mule-api</cloudhub.applicationName>
+
+    <anypoint.clientId>${anypoint.clientId}</anypoint.clientId>
+    <anypoint.clientSecret>${anypoint.clientSecret}</anypoint.clientSecret>
   </properties>
 
   <build>
@@ -53,6 +56,9 @@
             <workerType>${cloudhub.workerType}</workerType>
 
             <region>${cloudhub.region}</region>
+
+            <connectedAppClientId>${anypoint.clientId}</connectedAppClientId>
+            <connectedAppClientSecret>${anypoint.clientSecret}</connectedAppClientSecret>
           </cloudHubDeployment>
         </configuration>
       </plugin>
