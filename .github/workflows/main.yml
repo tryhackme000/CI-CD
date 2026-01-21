@@ -11,24 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout this repo
-        uses: actions/checkout@v3
-
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+        uses: actions/checkout@v4
 
       - name: Set up JDK 1.8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: 8
+          cache: maven
 
       - name: Build with Maven
-        run: mvn -B clean package --file simple-mule-api/pom.xml
+        run: mvn -B clean package --file simple-mule-api/pom.xml -DskipTests
 
       - name: Stamp artifact file name with commit hash
         run: |
@@ -48,7 +41,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: mule-artifact
           path: simple-mule-api/target/*.jar
 
   deploy:
@@ -56,42 +49,51 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout this repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Cache dependencies
-        uses: actions/cache@v3
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          distribution: zulu
+          java-version: 8
+          cache: maven
 
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: artifacts
-          path: target
+          name: mule-artifact
+          path: simple-mule-api/target
 
       - name: Deploy to Sandbox (Connected App)
         env:
           ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
           ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+          ANYPOINT_ORG_ID: ${{ secrets.ANYPOINT_ORG_ID }}
+          ANYPOINT_ENV: ${{ secrets.ANYPOINT_ENV }}
+          CLOUDHUB_APP_NAME: ${{ secrets.CLOUDHUB_APP_NAME }}
+          CLOUDHUB_REGION: ${{ secrets.CLOUDHUB_REGION }}
+          CLOUDHUB_WORKERS: ${{ secrets.CLOUDHUB_WORKERS }}
+          CLOUDHUB_WORKER_TYPE: ${{ secrets.CLOUDHUB_WORKER_TYPE }}
         run: |
-          artifactName=$(ls target/*.jar 2>/dev/null | head -1)
+          artifactName=$(ls simple-mule-api/target/*.jar 2>/dev/null | head -1)
 
           if [ -z "$artifactName" ]; then
-            echo "No jar found to deploy in target/"
+            echo "No jar found to deploy in simple-mule-api/target/"
             exit 1
           fi
 
-          if [ -z "$ANYPOINT_CLIENT_ID" ] || [ -z "$ANYPOINT_CLIENT_SECRET" ]; then
-            echo "Missing ANYPOINT_CLIENT_ID or ANYPOINT_CLIENT_SECRET in GitHub Secrets!"
-            exit 1
-          fi
+          echo "Deploying Artifact: $artifactName"
 
-          mvn deploy \
+          mvn -B deploy \
             --file simple-mule-api/pom.xml \
+            -DskipTests \
             -DmuleDeploy \
             -Dmule.artifact="$artifactName" \
             -Danypoint.client_id="$ANYPOINT_CLIENT_ID" \
-            -Danypoint.client_secret="$ANYPOINT_CLIENT_SECRET"
+            -Danypoint.client_secret="$ANYPOINT_CLIENT_SECRET" \
+            -Danypoint.orgId="$ANYPOINT_ORG_ID" \
+            -Danypoint.environment="$ANYPOINT_ENV" \
+            -Dcloudhub.applicationName="$CLOUDHUB_APP_NAME" \
+            -Dcloudhub.region="$CLOUDHUB_REGION" \
+            -Dcloudhub.workers="$CLOUDHUB_WORKERS" \
+            -Dcloudhub.workerType="$CLOUDHUB_WORKER_TYPE"
