@@ -54,8 +54,8 @@
 
             <region>${cloudhub.region}</region>
 
-            <connectedAppClientId>${anypoint.clientId}</connectedAppClientId>
-            <connectedAppClientSecret>${anypoint.clientSecret}</connectedAppClientSecret>
+            <connectedAppClientId>${connectedAppClientId}</connectedAppClientId>
+            <connectedAppClientSecret>${connectedAppClientSecret}</connectedAppClientSecret>
           </cloudHubDeployment>
         </configuration>
       </plugin>
